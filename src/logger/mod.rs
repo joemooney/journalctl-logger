@@ -2,15 +2,16 @@ mod routes;
 mod state;
 pub use routes::LoggingResponse;
 pub use routes::*;
+pub use state::ComponentState;
 pub use state::Db;
 pub use state::LoggerState;
 use std::process::Command;
 use std::{fs::File, process::Stdio};
 
-fn run_command(db: &mut LoggerState) {
+fn run_command(db: &mut ComponentState) {
     println!("Starting command");
     let out;
-    match &db.path {
+    match &db.log_path {
         Some(path) => {
             out = File::create(path).unwrap();
         }

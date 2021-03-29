@@ -39,20 +39,21 @@ fn wait_command(db: &Db) {
  */
 
 fn main() -> Result<(), ExitFailure> {
+    // let port = env::var("PORT").unwrap_or("8000".to_string());
     let opt = Opt::from_args();
     if opt.status {
         let resp =
             reqwest::blocking::get("http://localhost:8000/status")?.json::<LoggingResponse>()?;
         println!("{:#?}", resp);
     } else {
-        http_server::build_app().launch();
+        http_server::build_app(opt).launch();
     }
     Ok(())
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt, Debug, PartialEq)]
 #[structopt(name = "basic")]
-struct Opt {
+pub struct Opt {
     // A flag, true if used in the command line. Note doc comment will
     // be used for the help message of the flag. The name of the
     // argument will be, by default, based on the name of the field.
@@ -68,6 +69,10 @@ struct Opt {
     /// Verbose mode (-v, -vv, -vvv, etc.)
     #[structopt(short, long, parse(from_occurrences))]
     verbose: u8,
+
+    /// Port for http server
+    #[structopt(short, long, default_value = "38000")]
+    port: u32,
 
     /*
     /// Set speed
@@ -96,13 +101,16 @@ struct Opt {
 // compiles test code with cargo test, not cargo build
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::http_server;
     use rocket::http::{ContentType, Status};
     use rocket::local::Client;
 
     #[test]
     fn status() {
-        let client = Client::new(http_server::build_app()).expect("Could not launch server");
+        let no_opts: Vec<String> = vec![];
+        let opts = Opt::from_iter(no_opts);
+        let client = Client::new(http_server::build_app(opts)).expect("Could not launch server");
         let req = client.get("/status").header(ContentType::JSON);
         let mut resp = req.dispatch();
         let r = resp.body_string();
@@ -115,7 +123,9 @@ mod tests {
     }
     #[test]
     fn start() {
-        let client = Client::new(http_server::build_app()).expect("Could not launch server");
+        let no_opts: Vec<String> = vec![];
+        let opts = Opt::from_iter(no_opts);
+        let client = Client::new(http_server::build_app(opts)).expect("Could not launch server");
         let req = client
             .post("/start")
             .header(ContentType::JSON)
